@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0E0E0E">
+<title>Workout Timer</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --work: #FF4C1F;
+    --rest: #00C27C;
+    --bg: #0E0E0E;
+    --surface: #181818;
+    --border: #2A2A2A;
+    --text: #F0EDE8;
+    --muted: #666;
+    --radius: 16px;
+    --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Segoe UI Mono', 'Roboto Mono', monospace;
+    --font-display: -apple-system, 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: max(1.5rem, env(safe-area-inset-top)) 1rem max(1.5rem, env(safe-area-inset-bottom));
+    gap: 0;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(1.4rem, 5vw, 2.4rem);
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    color: var(--text);
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    width: 100%;
+    max-width: 420px;
+  }
+
+  /* ── Settings ── */
+  .settings {
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .setting-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .setting-label {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    width: 90px;
+    flex-shrink: 0;
+  }
+
+  .setting-label span {
+    display: block;
+    font-size: 13px;
+    color: var(--text);
+    letter-spacing: 0;
+    text-transform: none;
+    margin-top: 2px;
+    font-weight: 500;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+    min-height: 44px;
+    background-clip: content-box;
+    padding: 19px 0;
+  }
+
+  .range-work { background: linear-gradient(to right, var(--work) var(--pct, 50%), #2A2A2A var(--pct, 50%)) content-box; }
+  .range-rest { background: linear-gradient(to right, var(--rest) var(--pct, 50%), #2A2A2A var(--pct, 50%)) content-box; }
+  .range-rounds { background: linear-gradient(to right, #888 var(--pct, 50%), #2A2A2A var(--pct, 50%)) content-box; }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--text);
+    cursor: pointer;
+    transition: transform 0.15s;
+    margin-top: -10px;
+  }
+  input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+  input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.15); }
+  input[type="range"]::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; }
+  input[type="range"]::-moz-range-thumb {
+    width: 26px; height: 26px; border-radius: 50%; background: var(--text); cursor: pointer; border: none;
+  }
+
+  .val-box {
+    width: 52px;
+    text-align: right;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    flex-shrink: 0;
+  }
+
+  /* ── Divider ── */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 0 0 1.5rem; }
+
+  /* ── Timer display ── */
+  .timer-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.25rem 0 0.5rem;
+  }
+
+  .phase-tag {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 5px 16px;
+    border-radius: 99px;
+    font-weight: 500;
+    transition: background 0.3s, color 0.3s;
+  }
+  .tag-work { background: rgba(255,76,31,0.12); color: var(--work); }
+  .tag-rest { background: rgba(0,194,124,0.12); color: var(--rest); }
+  .tag-ready { background: rgba(240,237,232,0.07); color: var(--muted); }
+
+  /* Ring */
+  .ring-wrap { position: relative; width: min(200px, 55vw); height: min(200px, 55vw); }
+  .ring-wrap svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+  #ringBg { fill: none; stroke: var(--border); stroke-width: 10; }
+  #ringFg { fill: none; stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset 0.3s linear, stroke 0.4s; }
+  .ring-inner {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 4px;
+  }
+  .big-num {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(52px, 15vw, 72px);
+    line-height: 1;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    transition: color 0.3s;
+  }
+  .round-info {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ── Stats row ── */
+  .stats {
+    display: flex;
+    gap: 1px;
+    width: 100%;
+    background: var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .stat {
+    flex: 1;
+    background: var(--bg);
+    padding: 10px 12px;
+    text-align: center;
+  }
+  .stat:first-child { border-radius: 10px 0 0 10px; }
+  .stat:last-child { border-radius: 0 10px 10px 0; }
+  .stat-val { font-size: 16px; font-weight: 500; color: var(--text); }
+  .stat-lbl { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
+
+  /* ── Controls ── */
+  .controls {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 18px 14px;
+    border-radius: 14px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    transition: background 0.15s, transform 0.1s, opacity 0.15s;
+    min-height: 56px;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  .btn:hover { background: #222; }
+  .btn:active { transform: scale(0.97); }
+
+  .btn-main {
+    background: var(--text);
+    color: var(--bg);
+    border-color: transparent;
+    flex: 2;
+  }
+  .btn-main:hover { background: #d8d5d0; }
+
+  .btn-small { flex: 1; }
+
+  /* ── Finished state ── */
+  .done-banner {
+    display: none;
+    text-align: center;
+    padding: 12px;
+    border-radius: 10px;
+    background: rgba(0,194,124,0.08);
+    border: 1px solid rgba(0,194,124,0.2);
+    color: var(--rest);
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-top: 0.5rem;
+  }
+</style>
+</head>
+<body>
+
+<h1>Workout Timer</h1>
+
+<div class="card">
+  <!-- Settings -->
+  <div class="settings" id="settingsBlock">
+    <div class="setting-row">
+      <div class="setting-label">Belastung<span id="workVal">30 sek</span></div>
+      <input type="range" id="workSlider" class="range-work" min="5" max="120" step="5" value="30">
+    </div>
+    <div class="setting-row">
+      <div class="setting-label">Pause<span id="restVal">10 sek</span></div>
+      <input type="range" id="restSlider" class="range-rest" min="5" max="60" step="5" value="10">
+    </div>
+    <div class="setting-row">
+      <div class="setting-label">Runden<span id="roundsVal">∞</span></div>
+      <input type="range" id="roundsSlider" class="range-rounds" min="0" max="20" step="1" value="0">
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- Timer -->
+  <div class="timer-section">
+    <div class="phase-tag tag-ready" id="phaseTag">Bereit</div>
+
+    <div class="ring-wrap">
+      <svg width="200" height="200" viewBox="0 0 200 200">
+        <circle id="ringBg" cx="100" cy="100" r="88"/>
+        <circle id="ringFg" cx="100" cy="100" r="88"/>
+      </svg>
+      <div class="ring-inner">
+        <div class="big-num" id="bigNum">–</div>
+        <div class="round-info" id="roundInfo">Runde –</div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-val" id="statSets">0</div>
+        <div class="stat-lbl">Sätze</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val" id="statTotal">0:00</div>
+        <div class="stat-lbl">Gesamt</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val" id="statNext">–</div>
+        <div class="stat-lbl">Nächste</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn btn-main" id="mainBtn" onclick="toggleTimer()">Start</button>
+      <button class="btn btn-small" onclick="resetTimer()">Reset</button>
+    </div>
+
+    <div class="done-banner" id="doneBanner">🎉 Workout abgeschlossen!</div>
+  </div>
+</div>
+
+<script>
+  const CIRC = 2 * Math.PI * 88;
+
+  let workTime = 30, restTime = 10, maxRounds = 0;
+  let running = false, phase = 'idle', remaining = 0;
+  let currentRound = 0, totalSec = 0, interval = null;
+
+  // Elements
+  const ringFg = document.getElementById('ringFg');
+  const bigNum = document.getElementById('bigNum');
+  const phaseTag = document.getElementById('phaseTag');
+  const roundInfo = document.getElementById('roundInfo');
+  const mainBtn = document.getElementById('mainBtn');
+  const statSets = document.getElementById('statSets');
+  const statTotal = document.getElementById('statTotal');
+  const statNext = document.getElementById('statNext');
+  const doneBanner = document.getElementById('doneBanner');
+
+  // Sliders
+  function updateSliderFill(el, min, max) {
+    const pct = ((el.value - min) / (max - min) * 100).toFixed(1) + '%';
+    el.style.setProperty('--pct', pct);
+  }
+
+  document.getElementById('workSlider').addEventListener('input', function() {
+    workTime = +this.value;
+    document.getElementById('workVal').textContent = workTime + ' sek';
+    updateSliderFill(this, 5, 120);
+    if (phase === 'idle') reset_display();
+  });
+
+  document.getElementById('restSlider').addEventListener('input', function() {
+    restTime = +this.value;
+    document.getElementById('restVal').textContent = restTime + ' sek';
+    updateSliderFill(this, 5, 60);
+    if (phase === 'idle') reset_display();
+  });
+
+  document.getElementById('roundsSlider').addEventListener('input', function() {
+    maxRounds = +this.value;
+    document.getElementById('roundsVal').textContent = maxRounds === 0 ? '∞' : maxRounds;
+    updateSliderFill(this, 0, 20);
+    if (phase === 'idle') reset_display();
+  });
+
+  // Init fills
+  updateSliderFill(document.getElementById('workSlider'), 5, 120);
+  updateSliderFill(document.getElementById('restSlider'), 5, 60);
+  updateSliderFill(document.getElementById('roundsSlider'), 0, 20);
+
+  // Ring
+  function setRing(val, max, color) {
+    const offset = CIRC * (1 - val / max);
+    ringFg.style.strokeDasharray = CIRC;
+    ringFg.style.strokeDashoffset = offset;
+    ringFg.style.stroke = color;
+  }
+
+  // Beep
+  function beep(type) {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const plays = type === 'work' ? [[880,0],[880,0.14]] : [[440,0]];
+      plays.forEach(([freq, t]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.frequency.value = freq;
+        g.gain.setValueAtTime(0.4, ctx.currentTime + t);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.18);
+        o.start(ctx.currentTime + t);
+        o.stop(ctx.currentTime + t + 0.2);
+      });
+    } catch(e) {}
+  }
+
+  function fmt(s) {
+    return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+  }
+
+  function updateDisplay() {
+    const isWork = phase === 'work';
+    const isRest = phase === 'rest';
+
+    bigNum.textContent = phase === 'idle' ? '–' : remaining;
+    statSets.textContent = currentRound;
+    statTotal.textContent = fmt(totalSec);
+
+    if (isWork) {
+      phaseTag.textContent = 'Belastung';
+      phaseTag.className = 'phase-tag tag-work';
+      setRing(remaining, workTime, '#FF4C1F');
+      statNext.textContent = restTime + 's';
+      roundInfo.textContent = 'Runde ' + currentRound + (maxRounds > 0 ? ' / ' + maxRounds : '');
+    } else if (isRest) {
+      phaseTag.textContent = 'Pause';
+      phaseTag.className = 'phase-tag tag-rest';
+      setRing(remaining, restTime, '#00C27C');
+      statNext.textContent = workTime + 's';
+      roundInfo.textContent = 'Runde ' + currentRound + (maxRounds > 0 ? ' / ' + maxRounds : '');
+    } else {
+      phaseTag.textContent = 'Bereit';
+      phaseTag.className = 'phase-tag tag-ready';
+      ringFg.style.strokeDasharray = CIRC;
+      ringFg.style.strokeDashoffset = CIRC;
+      ringFg.style.stroke = '#2A2A2A';
+      statNext.textContent = '–';
+      roundInfo.textContent = 'Runde –';
+    }
+  }
+
+  function tick() {
+    totalSec++;
+    remaining--;
+
+    if (remaining <= 0) {
+      if (phase === 'work') {
+        beep('rest');
+        phase = 'rest';
+        remaining = restTime;
+      } else {
+        // finished a rest → new round
+        if (maxRounds > 0 && currentRound >= maxRounds) {
+          // done
+          finishWorkout();
+          return;
+        }
+        beep('work');
+        currentRound++;
+        phase = 'work';
+        remaining = workTime;
+      }
+    }
+    updateDisplay();
+  }
+
+  function finishWorkout() {
+    clearInterval(interval);
+    running = false;
+    phase = 'idle';
+    mainBtn.textContent = 'Start';
+    doneBanner.style.display = 'block';
+    updateDisplay();
+  }
+
+  function toggleTimer() {
+    if (phase === 'idle') {
+      // fresh start
+      doneBanner.style.display = 'none';
+      currentRound = 1;
+      totalSec = 0;
+      phase = 'work';
+      remaining = workTime;
+      running = true;
+      beep('work');
+      interval = setInterval(tick, 1000);
+      mainBtn.textContent = 'Pause';
+    } else if (running) {
+      clearInterval(interval);
+      running = false;
+      mainBtn.textContent = 'Weiter';
+    } else {
+      running = true;
+      interval = setInterval(tick, 1000);
+      mainBtn.textContent = 'Pause';
+    }
+    updateDisplay();
+  }
+
+  function resetTimer() {
+    clearInterval(interval);
+    running = false;
+    phase = 'idle';
+    remaining = 0;
+    currentRound = 0;
+    totalSec = 0;
+    mainBtn.textContent = 'Start';
+    doneBanner.style.display = 'none';
+    updateDisplay();
+  }
+
+  function reset_display() { updateDisplay(); }
+
+  updateDisplay();
+</script>
+</body>
+</html>

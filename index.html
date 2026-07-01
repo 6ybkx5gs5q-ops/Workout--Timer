@@ -19,69 +19,41 @@
     --text: #F0EDE8;
     --muted: #666;
     --radius: 16px;
-    --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Segoe UI Mono', 'Roboto Mono', monospace;
+    --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', monospace;
     --font-display: -apple-system, 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif;
   }
   body {
-    background: var(--bg);
-    color: var(--text);
+    background: var(--bg); color: var(--text);
     font-family: var(--font-mono);
-    min-height: 100vh;
-    min-height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    min-height: 100vh; min-height: 100dvh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
     padding: max(1.5rem, env(safe-area-inset-top)) 1rem max(1.5rem, env(safe-area-inset-bottom));
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent; touch-action: manipulation;
   }
   h1 {
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: clamp(1.4rem, 5vw, 2.4rem);
-    letter-spacing: -0.02em;
-    text-transform: uppercase;
-    margin-bottom: 1.5rem;
-    color: var(--text);
+    font-family: var(--font-display); font-weight: 800;
+    font-size: clamp(1.4rem, 5vw, 2.4rem); letter-spacing: -0.02em;
+    text-transform: uppercase; margin-bottom: 1.5rem;
   }
   .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1.25rem;
-    width: 100%;
-    max-width: 420px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.25rem;
+    width: 100%; max-width: 420px;
   }
-
-  /* ── Settings ── */
-  .settings {
-    margin-bottom: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-    transition: opacity .3s, max-height .3s;
-    overflow: hidden;
-  }
-  .settings.hidden { opacity: 0.35; pointer-events: none; }
+  .settings { margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; transition: opacity .3s; }
+  .settings.dimmed { opacity: .35; pointer-events: none; }
   .setting-row { display: flex; align-items: center; gap: 1rem; }
-  .setting-label {
-    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
-    color: var(--muted); width: 90px; flex-shrink: 0;
-  }
-  .setting-label span {
-    display: block; font-size: 13px; color: var(--text);
-    letter-spacing: 0; text-transform: none; margin-top: 2px; font-weight: 500;
-  }
+  .setting-label { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); width: 90px; flex-shrink: 0; }
+  .setting-label span { display: block; font-size: 13px; color: var(--text); letter-spacing: 0; text-transform: none; margin-top: 2px; font-weight: 500; }
   input[type="range"] {
-    -webkit-appearance: none; appearance: none;
-    flex: 1; height: 6px; border-radius: 3px;
-    outline: none; cursor: pointer;
+    -webkit-appearance: none; appearance: none; flex: 1; height: 6px;
+    border-radius: 3px; outline: none; cursor: pointer;
     min-height: 44px; background-clip: content-box; padding: 19px 0;
   }
-  .range-work  { background: linear-gradient(to right, var(--work) var(--pct,50%), #2A2A2A var(--pct,50%)) content-box; }
-  .range-rest  { background: linear-gradient(to right, var(--rest) var(--pct,50%), #2A2A2A var(--pct,50%)) content-box; }
-  .range-rounds{ background: linear-gradient(to right, #888 var(--pct,50%), #2A2A2A var(--pct,50%)) content-box; }
+  .range-work   { background: linear-gradient(to right, var(--work) var(--pct,50%), #2A2A2A var(--pct,50%)) content-box; }
+  .range-rest   { background: linear-gradient(to right, var(--rest) var(--pct,50%), #2A2A2A var(--pct,50%)) content-box; }
+  .range-rounds { background: linear-gradient(to right, #888 var(--pct,50%), #2A2A2A var(--pct,50%)) content-box; }
   input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none; width: 26px; height: 26px;
     border-radius: 50%; background: var(--text); cursor: pointer;
@@ -89,93 +61,55 @@
   }
   input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.15); }
   input[type="range"]::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; }
-  input[type="range"]::-moz-range-thumb {
-    width: 26px; height: 26px; border-radius: 50%; background: var(--text); cursor: pointer; border: none;
-  }
+  input[type="range"]::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%; background: var(--text); border: none; }
 
   .divider { border: none; border-top: 1px solid var(--border); margin: 0 0 1.5rem; }
 
-  /* ── Timer ── */
-  .timer-section {
-    display: flex; flex-direction: column;
-    align-items: center; gap: 1rem;
-    padding: .25rem 0 .5rem;
-  }
+  .timer-section { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: .25rem 0 .5rem; }
   .phase-tag {
     font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
-    padding: 5px 16px; border-radius: 99px; font-weight: 500;
-    transition: background .3s, color .3s;
+    padding: 5px 16px; border-radius: 99px; font-weight: 500; transition: background .3s, color .3s;
   }
   .tag-work  { background: rgba(255,76,31,.12); color: var(--work); }
   .tag-rest  { background: rgba(0,194,124,.12); color: var(--rest); }
   .tag-ready { background: rgba(240,237,232,.07); color: var(--muted); }
 
-  /* Ring */
   .ring-wrap { position: relative; width: min(200px,55vw); height: min(200px,55vw); }
   .ring-wrap svg { transform: rotate(-90deg); width: 100%; height: 100%; }
   #ringBg { fill: none; stroke: var(--border); stroke-width: 10; }
   #ringFg { fill: none; stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset .25s linear, stroke .4s; }
-  .ring-inner {
-    position: absolute; inset: 0;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 4px;
-  }
-  .big-num {
-    font-family: var(--font-display); font-weight: 800;
-    font-size: clamp(52px,15vw,72px); line-height: 1;
-    color: var(--text); font-variant-numeric: tabular-nums;
-    transition: color .3s;
-  }
+  .ring-inner { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+  .big-num { font-family: var(--font-display); font-weight: 800; font-size: clamp(52px,15vw,72px); line-height: 1; font-variant-numeric: tabular-nums; }
   .round-info { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
 
-  /* Stats */
-  .stats {
-    display: flex; gap: 1px; width: 100%;
-    background: var(--border); border-radius: 10px; overflow: hidden;
-  }
+  .stats { display: flex; gap: 1px; width: 100%; background: var(--border); border-radius: 10px; overflow: hidden; }
   .stat { flex: 1; background: var(--bg); padding: 10px 12px; text-align: center; }
   .stat:first-child { border-radius: 10px 0 0 10px; }
   .stat:last-child  { border-radius: 0 10px 10px 0; }
-  .stat-val { font-size: 16px; font-weight: 500; color: var(--text); }
+  .stat-val { font-size: 16px; font-weight: 500; }
   .stat-lbl { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
 
-  /* Controls */
   .controls { display: flex; gap: 10px; width: 100%; margin-top: .5rem; }
   .btn {
     flex: 1; padding: 18px 14px; border-radius: 14px;
-    font-family: var(--font-mono); font-size: 14px;
-    letter-spacing: .06em; text-transform: uppercase;
-    font-weight: 500; cursor: pointer;
+    font-family: var(--font-mono); font-size: 14px; letter-spacing: .06em;
+    text-transform: uppercase; font-weight: 500; cursor: pointer;
     border: 1px solid var(--border); background: transparent; color: var(--text);
-    transition: background .15s, transform .1s;
-    min-height: 56px; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+    transition: background .15s, transform .1s; min-height: 56px;
+    -webkit-tap-highlight-color: transparent; touch-action: manipulation;
   }
   .btn:hover  { background: #222; }
   .btn:active { transform: scale(.97); }
-  .btn-main {
-    background: var(--text); color: var(--bg);
-    border-color: transparent; flex: 2;
-  }
+  .btn-main   { background: var(--text); color: var(--bg); border-color: transparent; flex: 2; }
   .btn-main:hover { background: #d8d5d0; }
-  .btn-skip { color: var(--muted); }
-  .btn-skip:not(:disabled):hover { color: var(--text); }
   .btn-skip:disabled { opacity: .3; cursor: default; }
 
-  /* Done */
   .done-banner {
     display: none; text-align: center; padding: 12px; border-radius: 10px;
     background: rgba(0,194,124,.08); border: 1px solid rgba(0,194,124,.2);
-    color: var(--rest); font-size: 13px; letter-spacing: .06em;
-    text-transform: uppercase; margin-top: .5rem;
+    color: var(--rest); font-size: 13px; letter-spacing: .06em; text-transform: uppercase; margin-top: .5rem;
   }
-
-  /* Wake lock indicator */
-  .wake-badge {
-    font-size: 10px; letter-spacing: .08em; text-transform: uppercase;
-    color: var(--muted); text-align: center; margin-top: .75rem;
-    opacity: 0; transition: opacity .4s;
-  }
-  .wake-badge.visible { opacity: 1; }
+  .wake-badge { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); text-align: center; margin-top: .75rem; min-height: 16px; }
 </style>
 </head>
 <body>
@@ -221,224 +155,203 @@
     <div class="done-banner" id="doneBanner">🎉 Workout abgeschlossen!</div>
   </div>
 </div>
-<div class="wake-badge" id="wakeBadge">⚡ Bildschirm aktiv</div>
+<div class="wake-badge" id="wakeBadge"></div>
 
 <script>
-// ── Constants ────────────────────────────────────────────────────────────────
 const CIRC = 2 * Math.PI * 88;
 
 // ── State ────────────────────────────────────────────────────────────────────
 let workTime = 30, restTime = 10, maxRounds = 0;
-let running = false, phase = 'idle';
+let phase = 'idle', running = false;
 let currentRound = 0;
-let sessionStartTime = null;   // Date.now() when session started
-let phaseStartTime = null;     // Date.now() when current phase started
-let phaseDuration = 0;         // seconds for current phase
-let pausedAt = null;           // Date.now() when paused
-let totalPausedMs = 0;         // total ms spent paused this session
+let phaseStartTime = null;   // Date.now() at start of current phase
+let phaseDuration = 0;       // seconds
+let sessionStart = null;     // Date.now() at session start
+let remainingAtPause = 0;    // seconds left when paused
 let interval = null;
 let wakeLock = null;
+let audioCtx = null;
 
-// ── Elements ──────────────────────────────────────────────────────────────────
-const ringFg    = document.getElementById('ringFg');
-const bigNum    = document.getElementById('bigNum');
-const phaseTag  = document.getElementById('phaseTag');
-const roundInfo = document.getElementById('roundInfo');
-const mainBtn   = document.getElementById('mainBtn');
-const skipBtn   = document.getElementById('skipBtn');
-const statSets  = document.getElementById('statSets');
-const statTotal = document.getElementById('statTotal');
-const statNext  = document.getElementById('statNext');
-const doneBanner= document.getElementById('doneBanner');
-const wakeBadge = document.getElementById('wakeBadge');
-const settings  = document.getElementById('settingsBlock');
+// ── Elements ─────────────────────────────────────────────────────────────────
+const ringFg     = document.getElementById('ringFg');
+const bigNum     = document.getElementById('bigNum');
+const phaseTag   = document.getElementById('phaseTag');
+const roundInfo  = document.getElementById('roundInfo');
+const mainBtn    = document.getElementById('mainBtn');
+const skipBtn    = document.getElementById('skipBtn');
+const statSets   = document.getElementById('statSets');
+const statTotal  = document.getElementById('statTotal');
+const statNext   = document.getElementById('statNext');
+const doneBanner = document.getElementById('doneBanner');
+const settings   = document.getElementById('settingsBlock');
+const wakeBadge  = document.getElementById('wakeBadge');
 
-// ── localStorage settings ─────────────────────────────────────────────────────
+// ── Settings persistence ──────────────────────────────────────────────────────
 function saveSettings() {
-  localStorage.setItem('wt_work',   workTime);
-  localStorage.setItem('wt_rest',   restTime);
-  localStorage.setItem('wt_rounds', maxRounds);
+  localStorage.setItem('wt_w', workTime);
+  localStorage.setItem('wt_r', restTime);
+  localStorage.setItem('wt_n', maxRounds);
 }
 function loadSettings() {
-  const w = localStorage.getItem('wt_work');
-  const r = localStorage.getItem('wt_rest');
-  const n = localStorage.getItem('wt_rounds');
-  if (w) { workTime = +w;   document.getElementById('workSlider').value = w; }
-  if (r) { restTime = +r;   document.getElementById('restSlider').value = r; }
-  if (n) { maxRounds = +n;  document.getElementById('roundsSlider').value = n; }
-  document.getElementById('workVal').textContent   = workTime + ' sek';
-  document.getElementById('restVal').textContent   = restTime + ' sek';
-  document.getElementById('roundsVal').textContent = maxRounds === 0 ? '∞' : maxRounds;
-  updateSliderFill(document.getElementById('workSlider'),   5, 120);
-  updateSliderFill(document.getElementById('restSlider'),   5,  60);
-  updateSliderFill(document.getElementById('roundsSlider'), 0,  20);
+  const w = +localStorage.getItem('wt_w') || 30;
+  const r = +localStorage.getItem('wt_r') || 10;
+  const n = +localStorage.getItem('wt_n') || 0;
+  workTime = w; restTime = r; maxRounds = n;
+  document.getElementById('workSlider').value   = w;
+  document.getElementById('restSlider').value   = r;
+  document.getElementById('roundsSlider').value = n;
+  document.getElementById('workVal').textContent   = w + ' sek';
+  document.getElementById('restVal').textContent   = r + ' sek';
+  document.getElementById('roundsVal').textContent = n === 0 ? '∞' : n;
+  updateFill(document.getElementById('workSlider'),   5, 120);
+  updateFill(document.getElementById('restSlider'),   5,  60);
+  updateFill(document.getElementById('roundsSlider'), 0,  20);
 }
 
-// ── Slider fills ──────────────────────────────────────────────────────────────
-function updateSliderFill(el, min, max) {
+function updateFill(el, min, max) {
   el.style.setProperty('--pct', ((el.value - min) / (max - min) * 100).toFixed(1) + '%');
 }
 
 document.getElementById('workSlider').addEventListener('input', function() {
   workTime = +this.value;
   document.getElementById('workVal').textContent = workTime + ' sek';
-  updateSliderFill(this, 5, 120);
-  saveSettings();
-  if (phase === 'idle') updateDisplay();
+  updateFill(this, 5, 120); saveSettings();
 });
 document.getElementById('restSlider').addEventListener('input', function() {
   restTime = +this.value;
   document.getElementById('restVal').textContent = restTime + ' sek';
-  updateSliderFill(this, 5, 60);
-  saveSettings();
-  if (phase === 'idle') updateDisplay();
+  updateFill(this, 5, 60); saveSettings();
 });
 document.getElementById('roundsSlider').addEventListener('input', function() {
   maxRounds = +this.value;
   document.getElementById('roundsVal').textContent = maxRounds === 0 ? '∞' : maxRounds;
-  updateSliderFill(this, 0, 20);
-  saveSettings();
-  if (phase === 'idle') updateDisplay();
+  updateFill(this, 0, 20); saveSettings();
 });
 
-// ── Ring ──────────────────────────────────────────────────────────────────────
-function setRing(val, max, color) {
-  ringFg.style.strokeDasharray  = CIRC;
-  ringFg.style.strokeDashoffset = CIRC * (1 - Math.max(0, val) / max);
-  ringFg.style.stroke = color;
-}
-
 // ── Audio ─────────────────────────────────────────────────────────────────────
-let audioCtx = null;
-function getAudioCtx() {
+function ensureAudio() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  return audioCtx;
-}
-function beep(type) {
-  try {
-    const ctx = getAudioCtx();
-    // work: two short high beeps | rest: one low beep | done: descending 3-tone
-    const plays = type === 'work' ? [[880,0],[880,.15]] :
-                  type === 'rest' ? [[440,0]] :
-                  [[660,0],[550,.2],[440,.4]];
-    plays.forEach(([freq, t]) => {
-      const o = ctx.createOscillator(), g = ctx.createGain();
-      o.connect(g); g.connect(ctx.destination);
-      o.frequency.value = freq;
-      g.gain.setValueAtTime(0.45, ctx.currentTime + t);
-      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + .22);
-      o.start(ctx.currentTime + t);
-      o.stop(ctx.currentTime + t + .25);
-    });
-  } catch(e) {}
+  // iOS suspends AudioContext in background — always resume
+  if (audioCtx.state === 'suspended') return audioCtx.resume();
+  return Promise.resolve();
 }
 
-// ── Vibration ─────────────────────────────────────────────────────────────────
+function beep(type) {
+  ensureAudio().then(() => {
+    const plays = type === 'work' ? [[880,0],[880,.15]]
+                : type === 'rest' ? [[440,0]]
+                : [[660,0],[550,.2],[440,.4]]; // done
+    plays.forEach(([freq, t]) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination);
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0.45, audioCtx.currentTime + t);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + t + .22);
+      o.start(audioCtx.currentTime + t);
+      o.stop(audioCtx.currentTime + t + .25);
+    });
+  }).catch(() => {});
+}
+
 function vibrate(type) {
   if (!navigator.vibrate) return;
-  if (type === 'work') navigator.vibrate([80, 60, 80]);
+  if (type === 'work') navigator.vibrate([80,60,80]);
   else if (type === 'rest') navigator.vibrate([200]);
-  else if (type === 'done') navigator.vibrate([100, 80, 100, 80, 300]);
+  else navigator.vibrate([100,80,100,80,300]);
 }
 
 // ── Wake Lock ─────────────────────────────────────────────────────────────────
 async function requestWakeLock() {
   if (!('wakeLock' in navigator)) return;
   try {
+    if (wakeLock) return;
     wakeLock = await navigator.wakeLock.request('screen');
-    wakeBadge.classList.add('visible');
+    wakeBadge.textContent = '⚡ Bildschirm aktiv';
     wakeLock.addEventListener('release', () => {
-      wakeBadge.classList.remove('visible');
+      wakeLock = null;
+      if (running) wakeBadge.textContent = '';
     });
-  } catch(e) {}
+  } catch(e) { wakeBadge.textContent = ''; }
 }
 function releaseWakeLock() {
   if (wakeLock) { wakeLock.release(); wakeLock = null; }
-  wakeBadge.classList.remove('visible');
+  wakeBadge.textContent = '';
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function getRemaining() {
+  if (!phaseStartTime) return 0;
+  return Math.max(0, phaseDuration - Math.floor((Date.now() - phaseStartTime) / 1000));
+}
+function getTotalSec() {
+  if (!sessionStart) return 0;
+  return Math.floor((Date.now() - sessionStart) / 1000);
+}
+function fmt(s) { return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); }
+
+function setRing(val, max, color) {
+  ringFg.style.strokeDasharray  = CIRC;
+  ringFg.style.strokeDashoffset = CIRC * (1 - Math.max(0,val) / max);
+  ringFg.style.stroke = color;
 }
 
 // ── Display ───────────────────────────────────────────────────────────────────
-function getRemaining() {
-  if (phase === 'idle' || !phaseStartTime) return 0;
-  const elapsed = Math.floor((Date.now() - phaseStartTime) / 1000);
-  return Math.max(0, phaseDuration - elapsed);
-}
-function getTotalSec() {
-  if (!sessionStartTime) return 0;
-  const end = running ? Date.now() : (pausedAt || Date.now());
-  return Math.floor((end - sessionStartTime - totalPausedMs) / 1000);
-}
-
-function fmt(s) { return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); }
-
 function updateDisplay() {
   const rem = phase === 'idle' ? 0 : getRemaining();
-  bigNum.textContent   = phase === 'idle' ? '–' : rem;
-  statSets.textContent = currentRound;
-  statTotal.textContent= fmt(getTotalSec());
+  bigNum.textContent    = phase === 'idle' ? '–' : rem;
+  statSets.textContent  = currentRound;
+  statTotal.textContent = fmt(phase === 'idle' ? 0 : getTotalSec());
 
   if (phase === 'work') {
-    phaseTag.textContent = 'Belastung';
-    phaseTag.className   = 'phase-tag tag-work';
+    phaseTag.textContent = 'Belastung'; phaseTag.className = 'phase-tag tag-work';
     setRing(rem, phaseDuration, '#FF4C1F');
-    statNext.textContent = restTime + 's';
-    roundInfo.textContent= 'Runde ' + currentRound + (maxRounds > 0 ? ' / ' + maxRounds : '');
+    statNext.textContent  = restTime + 's';
+    roundInfo.textContent = 'Runde ' + currentRound + (maxRounds > 0 ? ' / ' + maxRounds : '');
   } else if (phase === 'rest') {
-    phaseTag.textContent = 'Pause';
-    phaseTag.className   = 'phase-tag tag-rest';
+    phaseTag.textContent = 'Pause'; phaseTag.className = 'phase-tag tag-rest';
     setRing(rem, phaseDuration, '#00C27C');
-    statNext.textContent = workTime + 's';
-    roundInfo.textContent= 'Runde ' + currentRound + (maxRounds > 0 ? ' / ' + maxRounds : '');
+    statNext.textContent  = workTime + 's';
+    roundInfo.textContent = 'Runde ' + currentRound + (maxRounds > 0 ? ' / ' + maxRounds : '');
   } else {
-    phaseTag.textContent = 'Bereit';
-    phaseTag.className   = 'phase-tag tag-ready';
-    ringFg.style.strokeDasharray  = CIRC;
-    ringFg.style.strokeDashoffset = CIRC;
-    ringFg.style.stroke = '#2A2A2A';
-    statNext.textContent  = '–';
-    roundInfo.textContent = 'Runde –';
+    phaseTag.textContent = 'Bereit'; phaseTag.className = 'phase-tag tag-ready';
+    ringFg.style.strokeDasharray = CIRC; ringFg.style.strokeDashoffset = CIRC; ringFg.style.stroke = '#2A2A2A';
+    statNext.textContent = '–'; roundInfo.textContent = 'Runde –';
   }
 }
 
-// ── Phase transition ──────────────────────────────────────────────────────────
-function switchToPhase(newPhase, newRound) {
+// ── Phase switch ──────────────────────────────────────────────────────────────
+function startPhase(newPhase, round) {
   phase         = newPhase;
-  currentRound  = newRound;
+  currentRound  = round;
   phaseDuration = newPhase === 'work' ? workTime : restTime;
   phaseStartTime= Date.now();
 }
 
-// ── Tick (runs every 200ms for accuracy) ─────────────────────────────────────
+// ── Tick (every 200ms) ────────────────────────────────────────────────────────
 function tick() {
   if (!running || phase === 'idle') return;
 
-  // Check if current phase expired
+  // Handle any expired phases (catches up after background)
   while (getRemaining() <= 0) {
     if (phase === 'work') {
-      // work → rest
-      if (maxRounds > 0 && currentRound >= maxRounds) {
-        finishWorkout();
-        return;
-      }
+      if (maxRounds > 0 && currentRound >= maxRounds) { finishWorkout(); return; }
       beep('rest'); vibrate('rest');
-      switchToPhase('rest', currentRound);
+      startPhase('rest', currentRound);
     } else {
-      // rest → work (new round)
       beep('work'); vibrate('work');
-      switchToPhase('work', currentRound + 1);
+      startPhase('work', currentRound + 1);
     }
   }
   updateDisplay();
 }
 
 function finishWorkout() {
-  clearInterval(interval);
-  running = false;
-  phase   = 'idle';
+  clearInterval(interval); interval = null;
+  running = false; phase = 'idle';
   mainBtn.textContent = 'Start';
-  skipBtn.disabled    = true;
+  skipBtn.disabled = true;
   doneBanner.style.display = 'block';
-  settings.classList.remove('hidden');
+  settings.classList.remove('dimmed');
   releaseWakeLock();
   beep('done'); vibrate('done');
   updateDisplay();
@@ -446,49 +359,37 @@ function finishWorkout() {
 
 // ── Controls ──────────────────────────────────────────────────────────────────
 function toggleTimer() {
-  // Unlock audio on first interaction
-  getAudioCtx();
+  ensureAudio(); // unlock AudioContext on first user gesture
 
   if (phase === 'idle') {
     // Fresh start
     doneBanner.style.display = 'none';
-    sessionStartTime = Date.now();
-    totalPausedMs    = 0;
-    pausedAt         = null;
-    switchToPhase('work', 1);
-    running          = true;
+    sessionStart = Date.now();
+    startPhase('work', 1);
+    running = true;
     beep('work'); vibrate('work');
     interval = setInterval(tick, 200);
     mainBtn.textContent = 'Pause';
-    skipBtn.disabled    = false;
-    settings.classList.add('hidden');
+    skipBtn.disabled = false;
+    settings.classList.add('dimmed');
     requestWakeLock();
+
   } else if (running) {
-    // Pause
-    clearInterval(interval);
-    running  = false;
-    pausedAt = Date.now();
+    // Pause — save remaining so resume is exact
+    remainingAtPause = getRemaining();
+    clearInterval(interval); interval = null;
+    running = false;
     mainBtn.textContent = 'Weiter';
-    skipBtn.disabled    = true;
+    skipBtn.disabled = true;
     releaseWakeLock();
+
   } else {
-    // Resume
-    if (pausedAt) totalPausedMs += Date.now() - pausedAt;
-    pausedAt = null;
-    // Shift phaseStartTime forward by pause duration so remaining stays correct
-    phaseStartTime += (Date.now() - (pausedAt || Date.now()));
-    // Recalculate: phaseStartTime was already correct before pause, just reactivate
-    // Actually: we need to shift phaseStartTime by how long we were paused
-    // Redo: totalPausedMs already updated above; phaseStartTime needs shift
-    // Shift by the pause duration
-    const pauseDur = Date.now() - (pausedAt || Date.now());
-    // Note: pausedAt was cleared above, recompute
-    phaseStartTime = Date.now() - ((phaseDuration - getRemaining()) * 1000);
-    // Simpler: store remaining at pause time and restore
+    // Resume — reconstruct phaseStartTime from saved remaining
+    phaseStartTime = Date.now() - (phaseDuration - remainingAtPause) * 1000;
     running = true;
     interval = setInterval(tick, 200);
     mainBtn.textContent = 'Pause';
-    skipBtn.disabled    = false;
+    skipBtn.disabled = false;
     requestWakeLock();
   }
   updateDisplay();
@@ -499,79 +400,42 @@ function skipPhase() {
   if (phase === 'work') {
     if (maxRounds > 0 && currentRound >= maxRounds) { finishWorkout(); return; }
     beep('rest'); vibrate('rest');
-    switchToPhase('rest', currentRound);
+    startPhase('rest', currentRound);
   } else {
     beep('work'); vibrate('work');
-    switchToPhase('work', currentRound + 1);
+    startPhase('work', currentRound + 1);
   }
   updateDisplay();
 }
 
 function resetTimer() {
-  clearInterval(interval);
+  clearInterval(interval); interval = null;
   releaseWakeLock();
-  running          = false;
-  phase            = 'idle';
-  currentRound     = 0;
-  sessionStartTime = null;
-  phaseStartTime   = null;
-  totalPausedMs    = 0;
-  pausedAt         = null;
-  mainBtn.textContent      = 'Start';
-  skipBtn.disabled         = true;
+  running = false; phase = 'idle';
+  currentRound = 0; sessionStart = null; phaseStartTime = null;
+  mainBtn.textContent = 'Start';
+  skipBtn.disabled = true;
   doneBanner.style.display = 'none';
-  settings.classList.remove('hidden');
+  settings.classList.remove('dimmed');
   updateDisplay();
 }
 
-// ── Background / Foreground handling ─────────────────────────────────────────
-// When coming back from background, tick() will naturally recalculate
-// remaining from Date.now(), so no special handling needed.
-// We do re-request wake lock on visibility restore (iOS releases it on background).
+// ── Background / Foreground ───────────────────────────────────────────────────
+// When returning from background:
+// 1. AudioContext may be suspended → resume it, then beep current phase
+// 2. Wake lock may have been released → re-request
+// 3. tick() will naturally catch up via Date.now() timing
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && running) {
+    ensureAudio().then(() => {
+      // Beep current phase so user knows where they are
+      beep(phase === 'work' ? 'work' : 'rest');
+      vibrate(phase === 'work' ? 'work' : 'rest');
+    });
     requestWakeLock();
-    tick(); // immediate catch-up tick
+    tick(); // immediate catch-up
   }
 });
-
-// ── Pause/resume fix: store remaining at pause ────────────────────────────────
-// Override toggleTimer to correctly handle pause/resume with Date.now() timing
-let remainingAtPause = 0;
-
-// Patch: override the resume branch properly
-(function patchToggle() {
-  const orig = toggleTimer;
-  window.toggleTimer = function() {
-    if (phase !== 'idle' && !running) {
-      // Resume: reconstruct phaseStartTime from remainingAtPause
-      phaseStartTime = Date.now() - (phaseDuration - remainingAtPause) * 1000;
-      if (pausedAt) totalPausedMs += Date.now() - pausedAt;
-      pausedAt = null;
-      running  = true;
-      interval = setInterval(tick, 200);
-      mainBtn.textContent = 'Pause';
-      skipBtn.disabled    = false;
-      requestWakeLock();
-      updateDisplay();
-      return;
-    }
-    if (phase !== 'idle' && running) {
-      // Pause: capture remaining
-      remainingAtPause = getRemaining();
-      pausedAt = Date.now();
-      clearInterval(interval);
-      running  = false;
-      mainBtn.textContent = 'Weiter';
-      skipBtn.disabled    = true;
-      releaseWakeLock();
-      updateDisplay();
-      return;
-    }
-    // Fresh start
-    orig();
-  };
-})();
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 loadSettings();

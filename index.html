@@ -11,104 +11,71 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --work: #FF4C1F;
-    --rest: #00C27C;
-    --bg: #0E0E0E;
-    --surface: #181818;
-    --border: #2A2A2A;
-    --text: #F0EDE8;
-    --muted: #666;
-    --radius: 16px;
-    --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', monospace;
+    --work: #FF4C1F; --rest: #00C27C; --bg: #0E0E0E; --surface: #181818;
+    --border: #2A2A2A; --text: #F0EDE8; --muted: #666; --radius: 16px;
+    --font-mono: ui-monospace, 'SF Mono', monospace;
     --font-display: -apple-system, 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif;
   }
   body {
-    background: var(--bg); color: var(--text);
-    font-family: var(--font-mono);
-    min-height: 100vh; min-height: 100dvh;
-    display: flex; flex-direction: column;
+    background: var(--bg); color: var(--text); font-family: var(--font-mono);
+    min-height: 100dvh; display: flex; flex-direction: column;
     align-items: center; justify-content: center;
     padding: max(1.5rem, env(safe-area-inset-top)) 1rem max(1.5rem, env(safe-area-inset-bottom));
     -webkit-tap-highlight-color: transparent; touch-action: manipulation;
   }
-  h1 {
-    font-family: var(--font-display); font-weight: 800;
-    font-size: clamp(1.4rem, 5vw, 2.4rem); letter-spacing: -0.02em;
-    text-transform: uppercase; margin-bottom: 1.5rem;
-  }
-  .card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 1.25rem;
-    width: 100%; max-width: 420px;
-  }
+  h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.4rem,5vw,2.4rem);
+       letter-spacing: -0.02em; text-transform: uppercase; margin-bottom: 1.5rem; }
+  .card { background: var(--surface); border: 1px solid var(--border);
+          border-radius: var(--radius); padding: 1.25rem; width: 100%; max-width: 420px; }
   .settings { margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; transition: opacity .3s; }
   .settings.dimmed { opacity: .35; pointer-events: none; }
   .setting-row { display: flex; align-items: center; gap: 1rem; }
   .setting-label { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); width: 90px; flex-shrink: 0; }
   .setting-label span { display: block; font-size: 13px; color: var(--text); letter-spacing: 0; text-transform: none; margin-top: 2px; font-weight: 500; }
-  input[type="range"] {
-    -webkit-appearance: none; appearance: none; flex: 1; height: 6px;
-    border-radius: 3px; outline: none; cursor: pointer;
-    min-height: 44px; background-clip: content-box; padding: 19px 0;
-  }
+  input[type="range"] { -webkit-appearance: none; appearance: none; flex: 1; height: 6px;
+    border-radius: 3px; outline: none; cursor: pointer; min-height: 44px; background-clip: content-box; padding: 19px 0; }
   .range-work   { background: linear-gradient(to right, var(--work) var(--pct,50%), #2A2A2A var(--pct,50%)) content-box; }
   .range-rest   { background: linear-gradient(to right, var(--rest) var(--pct,50%), #2A2A2A var(--pct,50%)) content-box; }
   .range-rounds { background: linear-gradient(to right, #888 var(--pct,50%), #2A2A2A var(--pct,50%)) content-box; }
-  input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 26px; height: 26px;
-    border-radius: 50%; background: var(--text); cursor: pointer;
-    transition: transform .15s; margin-top: -10px;
-  }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px;
+    border-radius: 50%; background: var(--text); cursor: pointer; transition: transform .15s; margin-top: -10px; }
   input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.15); }
   input[type="range"]::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; }
-  input[type="range"]::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%; background: var(--text); border: none; }
-
   .divider { border: none; border-top: 1px solid var(--border); margin: 0 0 1.5rem; }
-
   .timer-section { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: .25rem 0 .5rem; }
-  .phase-tag {
-    font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
-    padding: 5px 16px; border-radius: 99px; font-weight: 500; transition: background .3s, color .3s;
-  }
+  .phase-tag { font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+    padding: 5px 16px; border-radius: 99px; font-weight: 500; transition: background .3s, color .3s; }
   .tag-work  { background: rgba(255,76,31,.12); color: var(--work); }
   .tag-rest  { background: rgba(0,194,124,.12); color: var(--rest); }
   .tag-ready { background: rgba(240,237,232,.07); color: var(--muted); }
-
   .ring-wrap { position: relative; width: min(200px,55vw); height: min(200px,55vw); }
   .ring-wrap svg { transform: rotate(-90deg); width: 100%; height: 100%; }
   #ringBg { fill: none; stroke: var(--border); stroke-width: 10; }
   #ringFg { fill: none; stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset .25s linear, stroke .4s; }
-  .ring-inner { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
-  .big-num { font-family: var(--font-display); font-weight: 800; font-size: clamp(52px,15vw,72px); line-height: 1; font-variant-numeric: tabular-nums; }
+  .ring-inner { position: absolute; inset: 0; display: flex; flex-direction: column;
+                align-items: center; justify-content: center; gap: 4px; }
+  .big-num { font-family: var(--font-display); font-weight: 800; font-size: clamp(52px,15vw,72px);
+             line-height: 1; font-variant-numeric: tabular-nums; }
   .round-info { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-
   .stats { display: flex; gap: 1px; width: 100%; background: var(--border); border-radius: 10px; overflow: hidden; }
   .stat { flex: 1; background: var(--bg); padding: 10px 12px; text-align: center; }
   .stat:first-child { border-radius: 10px 0 0 10px; }
   .stat:last-child  { border-radius: 0 10px 10px 0; }
   .stat-val { font-size: 16px; font-weight: 500; }
   .stat-lbl { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
-
   .controls { display: flex; gap: 10px; width: 100%; margin-top: .5rem; }
-  .btn {
-    flex: 1; padding: 18px 14px; border-radius: 14px;
-    font-family: var(--font-mono); font-size: 14px; letter-spacing: .06em;
-    text-transform: uppercase; font-weight: 500; cursor: pointer;
+  .btn { flex: 1; padding: 18px 14px; border-radius: 14px; font-family: var(--font-mono);
+    font-size: 14px; letter-spacing: .06em; text-transform: uppercase; font-weight: 500; cursor: pointer;
     border: 1px solid var(--border); background: transparent; color: var(--text);
     transition: background .15s, transform .1s; min-height: 56px;
-    -webkit-tap-highlight-color: transparent; touch-action: manipulation;
-  }
-  .btn:hover  { background: #222; }
-  .btn:active { transform: scale(.97); }
-  .btn-main   { background: var(--text); color: var(--bg); border-color: transparent; flex: 2; }
+    -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  .btn:hover { background: #222; } .btn:active { transform: scale(.97); }
+  .btn-main { background: var(--text); color: var(--bg); border-color: transparent; flex: 2; }
   .btn-main:hover { background: #d8d5d0; }
   .btn-skip:disabled { opacity: .3; cursor: default; }
-
-  .done-banner {
-    display: none; text-align: center; padding: 12px; border-radius: 10px;
+  .done-banner { display: none; text-align: center; padding: 12px; border-radius: 10px;
     background: rgba(0,194,124,.08); border: 1px solid rgba(0,194,124,.2);
-    color: var(--rest); font-size: 13px; letter-spacing: .06em; text-transform: uppercase; margin-top: .5rem;
-  }
+    color: var(--rest); font-size: 13px; letter-spacing: .06em; text-transform: uppercase; margin-top: .5rem; }
   .wake-badge { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); text-align: center; margin-top: .75rem; min-height: 16px; }
 </style>
 </head>
@@ -160,57 +127,40 @@
 <script>
 const CIRC = 2 * Math.PI * 88;
 
-// ── State ─────────────────────────────────────────────────────────────────────
 let workTime = 30, restTime = 10, maxRounds = 0;
 let phase = 'idle', running = false;
 let currentRound = 0;
-let phaseStartTime = null;
-let phaseDuration = 0;
-let sessionStart = null;
-let remainingAtPause = 0;
-let interval = null;
-let wakeLock = null;
+let phaseStartTime = null, phaseDuration = 0, sessionStart = null, remainingAtPause = 0;
+let interval = null, wakeLock = null;
+let audioCtx = null, silentSource = null;
 
 // ── Audio ─────────────────────────────────────────────────────────────────────
-let audioCtx = null;
-let silentNode = null;   // keeps iOS audio session alive while timer runs
-
 function initAudio() {
   if (audioCtx) return;
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 }
 
-// Play a 1-second silent buffer in a loop.
-// This is the only reliable way to keep iOS from suspending the AudioContext
-// when the app is backgrounded. Must be started on a user gesture.
+// Looping silent buffer — runs entirely in the Web Audio scheduler (no JS needed).
+// This keeps the iOS audio session alive even when JS is frozen in background.
 function startSilentLoop() {
-  if (!audioCtx) return;
-  if (silentNode) return; // already running
-  const buf = audioCtx.createBuffer(1, audioCtx.sampleRate, audioCtx.sampleRate);
-  // buffer is already zero (silence)
-  function scheduleNext() {
-    if (!running) { silentNode = null; return; }
-    const src = audioCtx.createBufferSource();
-    src.buffer = buf;
-    src.connect(audioCtx.destination);
-    silentNode = src;
-    src.onended = scheduleNext;
-    src.start();
-  }
-  scheduleNext();
+  if (!audioCtx || silentSource) return;
+  // 2 seconds of silence; looped = infinite, no JS reschedule needed
+  const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 2, audioCtx.sampleRate);
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  src.loop = true; // Web Audio engine loops this, not JS
+  src.connect(audioCtx.destination);
+  src.start(0);
+  silentSource = src;
 }
 
 function stopSilentLoop() {
-  if (silentNode) {
-    try { silentNode.stop(); } catch(e) {}
-    silentNode = null;
-  }
+  if (silentSource) { try { silentSource.stop(); } catch(e) {} silentSource = null; }
 }
 
 function beep(type) {
   if (!audioCtx) return;
-  // Ensure context is running (safety net)
-  const play = () => {
+  const doBeep = () => {
     const plays = type === 'work' ? [[880,0],[880,.15]]
                 : type === 'rest' ? [[440,0]]
                 : [[660,0],[550,.2],[440,.4]];
@@ -224,11 +174,7 @@ function beep(type) {
       o.stop(audioCtx.currentTime + t + .25);
     });
   };
-  if (audioCtx.state === 'suspended') {
-    audioCtx.resume().then(play).catch(() => {});
-  } else {
-    play();
-  }
+  audioCtx.state === 'suspended' ? audioCtx.resume().then(doBeep) : doBeep();
 }
 
 function vibrate(type) {
@@ -238,17 +184,13 @@ function vibrate(type) {
   else navigator.vibrate([100,80,100,80,300]);
 }
 
-// ── Wake Lock ─────────────────────────────────────────────────────────────────
+// ── Wake Lock ──────────────────────────────────────────────────────────────────
 async function requestWakeLock() {
-  if (!('wakeLock' in navigator)) return;
+  if (!('wakeLock' in navigator) || wakeLock) return;
   try {
-    if (wakeLock) return;
     wakeLock = await navigator.wakeLock.request('screen');
     document.getElementById('wakeBadge').textContent = '⚡ Bildschirm aktiv';
-    wakeLock.addEventListener('release', () => {
-      wakeLock = null;
-      document.getElementById('wakeBadge').textContent = '';
-    });
+    wakeLock.addEventListener('release', () => { wakeLock = null; document.getElementById('wakeBadge').textContent = ''; });
   } catch(e) {}
 }
 function releaseWakeLock() {
@@ -256,214 +198,163 @@ function releaseWakeLock() {
   document.getElementById('wakeBadge').textContent = '';
 }
 
-// ── Settings ──────────────────────────────────────────────────────────────────
-function saveSettings() {
-  localStorage.setItem('wt_w', workTime);
-  localStorage.setItem('wt_r', restTime);
-  localStorage.setItem('wt_n', maxRounds);
-}
+// ── Settings ───────────────────────────────────────────────────────────────────
+function saveSettings() { localStorage.setItem('wt_w',workTime); localStorage.setItem('wt_r',restTime); localStorage.setItem('wt_n',maxRounds); }
 function loadSettings() {
-  const w = +localStorage.getItem('wt_w') || 30;
-  const r = +localStorage.getItem('wt_r') || 10;
-  const n = +localStorage.getItem('wt_n') || 0;
-  workTime = w; restTime = r; maxRounds = n;
-  document.getElementById('workSlider').value = w;
-  document.getElementById('restSlider').value = r;
-  document.getElementById('roundsSlider').value = n;
-  document.getElementById('workVal').textContent   = w + ' sek';
-  document.getElementById('restVal').textContent   = r + ' sek';
-  document.getElementById('roundsVal').textContent = n === 0 ? '∞' : n;
+  workTime  = +localStorage.getItem('wt_w') || 30;
+  restTime  = +localStorage.getItem('wt_r') || 10;
+  maxRounds = +localStorage.getItem('wt_n') || 0;
+  document.getElementById('workSlider').value   = workTime;
+  document.getElementById('restSlider').value   = restTime;
+  document.getElementById('roundsSlider').value = maxRounds;
+  document.getElementById('workVal').textContent   = workTime + ' sek';
+  document.getElementById('restVal').textContent   = restTime + ' sek';
+  document.getElementById('roundsVal').textContent = maxRounds === 0 ? '∞' : maxRounds;
   updateFill(document.getElementById('workSlider'),   5, 120);
   updateFill(document.getElementById('restSlider'),   5,  60);
   updateFill(document.getElementById('roundsSlider'), 0,  20);
 }
-function updateFill(el, min, max) {
-  el.style.setProperty('--pct', ((el.value - min) / (max - min) * 100).toFixed(1) + '%');
-}
+function updateFill(el, min, max) { el.style.setProperty('--pct', ((el.value-min)/(max-min)*100).toFixed(1)+'%'); }
 
 document.getElementById('workSlider').addEventListener('input', function() {
-  workTime = +this.value;
-  document.getElementById('workVal').textContent = workTime + ' sek';
-  updateFill(this, 5, 120); saveSettings();
-});
+  workTime = +this.value; document.getElementById('workVal').textContent = workTime+' sek'; updateFill(this,5,120); saveSettings(); });
 document.getElementById('restSlider').addEventListener('input', function() {
-  restTime = +this.value;
-  document.getElementById('restVal').textContent = restTime + ' sek';
-  updateFill(this, 5, 60); saveSettings();
-});
+  restTime = +this.value; document.getElementById('restVal').textContent = restTime+' sek'; updateFill(this,5,60); saveSettings(); });
 document.getElementById('roundsSlider').addEventListener('input', function() {
-  maxRounds = +this.value;
-  document.getElementById('roundsVal').textContent = maxRounds === 0 ? '∞' : maxRounds;
-  updateFill(this, 0, 20); saveSettings();
-});
+  maxRounds = +this.value; document.getElementById('roundsVal').textContent = maxRounds===0?'∞':maxRounds; updateFill(this,0,20); saveSettings(); });
 
-// ── Timer core ────────────────────────────────────────────────────────────────
-function getRemaining() {
-  if (!phaseStartTime) return 0;
-  return Math.max(0, phaseDuration - Math.floor((Date.now() - phaseStartTime) / 1000));
-}
-function getTotalSec() {
-  return sessionStart ? Math.floor((Date.now() - sessionStart) / 1000) : 0;
-}
-function fmt(s) { return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); }
+// ── Timer core ─────────────────────────────────────────────────────────────────
+function getRemaining() { return !phaseStartTime ? 0 : Math.max(0, phaseDuration - Math.floor((Date.now()-phaseStartTime)/1000)); }
+function getTotalSec()  { return sessionStart ? Math.floor((Date.now()-sessionStart)/1000) : 0; }
+function fmt(s)         { return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+
+const ringFg   = document.getElementById('ringFg');
+const phaseTag = document.getElementById('phaseTag');
 
 function setRing(val, max, color) {
   ringFg.style.strokeDasharray  = CIRC;
-  ringFg.style.strokeDashoffset = CIRC * (1 - Math.max(0, val) / max);
+  ringFg.style.strokeDashoffset = CIRC * (1 - Math.max(0,val)/max);
   ringFg.style.stroke = color;
 }
 
 function updateDisplay() {
-  const rem = (phase === 'idle') ? 0 : getRemaining();
-  document.getElementById('bigNum').textContent    = phase === 'idle' ? '–' : rem;
+  const rem = phase==='idle' ? 0 : getRemaining();
+  document.getElementById('bigNum').textContent    = phase==='idle' ? '–' : rem;
   document.getElementById('statSets').textContent  = currentRound;
-  document.getElementById('statTotal').textContent = fmt(phase === 'idle' ? 0 : getTotalSec());
-
-  if (phase === 'work') {
-    phaseTag.textContent = 'Belastung'; phaseTag.className = 'phase-tag tag-work';
+  document.getElementById('statTotal').textContent = fmt(phase==='idle'?0:getTotalSec());
+  if (phase==='work') {
+    phaseTag.textContent='Belastung'; phaseTag.className='phase-tag tag-work';
     setRing(rem, phaseDuration, '#FF4C1F');
-    document.getElementById('statNext').textContent  = restTime + 's';
-    document.getElementById('roundInfo').textContent = 'Runde ' + currentRound + (maxRounds > 0 ? ' / ' + maxRounds : '');
-  } else if (phase === 'rest') {
-    phaseTag.textContent = 'Pause'; phaseTag.className = 'phase-tag tag-rest';
+    document.getElementById('statNext').textContent  = restTime+'s';
+    document.getElementById('roundInfo').textContent = 'Runde '+currentRound+(maxRounds>0?' / '+maxRounds:'');
+  } else if (phase==='rest') {
+    phaseTag.textContent='Pause'; phaseTag.className='phase-tag tag-rest';
     setRing(rem, phaseDuration, '#00C27C');
-    document.getElementById('statNext').textContent  = workTime + 's';
-    document.getElementById('roundInfo').textContent = 'Runde ' + currentRound + (maxRounds > 0 ? ' / ' + maxRounds : '');
+    document.getElementById('statNext').textContent  = workTime+'s';
+    document.getElementById('roundInfo').textContent = 'Runde '+currentRound+(maxRounds>0?' / '+maxRounds:'');
   } else {
-    phaseTag.textContent = 'Bereit'; phaseTag.className = 'phase-tag tag-ready';
-    ringFg.style.strokeDasharray = CIRC; ringFg.style.strokeDashoffset = CIRC; ringFg.style.stroke = '#2A2A2A';
-    document.getElementById('statNext').textContent  = '–';
-    document.getElementById('roundInfo').textContent = 'Runde –';
+    phaseTag.textContent='Bereit'; phaseTag.className='phase-tag tag-ready';
+    ringFg.style.strokeDasharray=CIRC; ringFg.style.strokeDashoffset=CIRC; ringFg.style.stroke='#2A2A2A';
+    document.getElementById('statNext').textContent='–'; document.getElementById('roundInfo').textContent='Runde –';
   }
 }
 
-const phaseTag = document.getElementById('phaseTag');
-const ringFg   = document.getElementById('ringFg');
-
 function startPhase(newPhase, round) {
-  phase          = newPhase;
-  currentRound   = round;
-  phaseDuration  = newPhase === 'work' ? workTime : restTime;
+  phase=newPhase; currentRound=round;
+  phaseDuration = newPhase==='work' ? workTime : restTime;
   phaseStartTime = Date.now();
 }
 
 function tick() {
-  if (!running || phase === 'idle') return;
-  // Catch up: handle any phases that expired while backgrounded
+  if (!running || phase==='idle') return;
   while (getRemaining() <= 0) {
-    if (phase === 'work') {
-      if (maxRounds > 0 && currentRound >= maxRounds) { finishWorkout(); return; }
-      beep('rest'); vibrate('rest');
-      startPhase('rest', currentRound);
+    if (phase==='work') {
+      if (maxRounds>0 && currentRound>=maxRounds) { finishWorkout(); return; }
+      beep('rest'); vibrate('rest'); startPhase('rest', currentRound);
     } else {
-      beep('work'); vibrate('work');
-      startPhase('work', currentRound + 1);
+      beep('work'); vibrate('work'); startPhase('work', currentRound+1);
     }
   }
   updateDisplay();
 }
 
 function finishWorkout() {
-  clearInterval(interval); interval = null;
-  running = false; phase = 'idle';
-  stopSilentLoop();
-  releaseWakeLock();
-  document.getElementById('mainBtn').textContent = 'Start';
-  document.getElementById('skipBtn').disabled = true;
-  document.getElementById('doneBanner').style.display = 'block';
+  clearInterval(interval); interval=null; running=false; phase='idle';
+  stopSilentLoop(); releaseWakeLock();
+  document.getElementById('mainBtn').textContent='Start';
+  document.getElementById('skipBtn').disabled=true;
+  document.getElementById('doneBanner').style.display='block';
   document.getElementById('settingsBlock').classList.remove('dimmed');
-  beep('done'); vibrate('done');
-  updateDisplay();
+  beep('done'); vibrate('done'); updateDisplay();
 }
 
-// ── Controls ──────────────────────────────────────────────────────────────────
+// ── Controls ───────────────────────────────────────────────────────────────────
 function toggleTimer() {
-  // Always init & resume AudioContext on user gesture (iOS requirement)
   initAudio();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
+  if (audioCtx.state==='suspended') audioCtx.resume();
 
-  if (phase === 'idle') {
-    // Fresh start
-    document.getElementById('doneBanner').style.display = 'none';
-    sessionStart = Date.now();
-    startPhase('work', 1);
-    running = true;
-    startSilentLoop(); // keeps iOS audio session alive
+  if (phase==='idle') {
+    document.getElementById('doneBanner').style.display='none';
+    sessionStart=Date.now(); startPhase('work',1); running=true;
+    startSilentLoop();
     beep('work'); vibrate('work');
-    interval = setInterval(tick, 200);
-    document.getElementById('mainBtn').textContent = 'Pause';
-    document.getElementById('skipBtn').disabled = false;
+    interval=setInterval(tick,200);
+    document.getElementById('mainBtn').textContent='Pause';
+    document.getElementById('skipBtn').disabled=false;
     document.getElementById('settingsBlock').classList.add('dimmed');
     requestWakeLock();
-
   } else if (running) {
-    // Pause
-    remainingAtPause = getRemaining();
-    clearInterval(interval); interval = null;
-    running = false;
-    stopSilentLoop();
-    releaseWakeLock();
-    document.getElementById('mainBtn').textContent = 'Weiter';
-    document.getElementById('skipBtn').disabled = true;
-
+    remainingAtPause=getRemaining();
+    clearInterval(interval); interval=null; running=false;
+    stopSilentLoop(); releaseWakeLock();
+    document.getElementById('mainBtn').textContent='Weiter';
+    document.getElementById('skipBtn').disabled=true;
   } else {
-    // Resume
-    phaseStartTime = Date.now() - (phaseDuration - remainingAtPause) * 1000;
-    running = true;
+    phaseStartTime=Date.now()-(phaseDuration-remainingAtPause)*1000;
+    running=true;
     startSilentLoop();
-    interval = setInterval(tick, 200);
-    document.getElementById('mainBtn').textContent = 'Pause';
-    document.getElementById('skipBtn').disabled = false;
+    interval=setInterval(tick,200);
+    document.getElementById('mainBtn').textContent='Pause';
+    document.getElementById('skipBtn').disabled=false;
     requestWakeLock();
   }
   updateDisplay();
 }
 
 function skipPhase() {
-  if (!running || phase === 'idle') return;
-  if (phase === 'work') {
-    if (maxRounds > 0 && currentRound >= maxRounds) { finishWorkout(); return; }
-    beep('rest'); vibrate('rest');
-    startPhase('rest', currentRound);
-  } else {
-    beep('work'); vibrate('work');
-    startPhase('work', currentRound + 1);
-  }
+  if (!running || phase==='idle') return;
+  if (phase==='work') {
+    if (maxRounds>0 && currentRound>=maxRounds) { finishWorkout(); return; }
+    beep('rest'); vibrate('rest'); startPhase('rest',currentRound);
+  } else { beep('work'); vibrate('work'); startPhase('work',currentRound+1); }
   updateDisplay();
 }
 
 function resetTimer() {
-  clearInterval(interval); interval = null;
-  stopSilentLoop();
-  releaseWakeLock();
-  running = false; phase = 'idle';
-  currentRound = 0; sessionStart = null; phaseStartTime = null;
-  document.getElementById('mainBtn').textContent = 'Start';
-  document.getElementById('skipBtn').disabled = true;
-  document.getElementById('doneBanner').style.display = 'none';
+  clearInterval(interval); interval=null;
+  stopSilentLoop(); releaseWakeLock();
+  running=false; phase='idle'; currentRound=0; sessionStart=null; phaseStartTime=null;
+  document.getElementById('mainBtn').textContent='Start';
+  document.getElementById('skipBtn').disabled=true;
+  document.getElementById('doneBanner').style.display='none';
   document.getElementById('settingsBlock').classList.remove('dimmed');
   updateDisplay();
 }
 
-// ── Visibility change ─────────────────────────────────────────────────────────
-// The silent loop should prevent iOS from ever suspending the AudioContext.
-// This handler is a fallback for edge cases (e.g. very long background time).
+// ── Visibility change (Fallback) ───────────────────────────────────────────────
+// Silent loop keeps AudioContext alive, but this is a safety net.
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && running) {
-    if (audioCtx && audioCtx.state === 'suspended') {
-      audioCtx.resume().then(() => {
-        beep(phase === 'work' ? 'work' : 'rest');
-        vibrate(phase === 'work' ? 'work' : 'rest');
-      }).catch(() => {});
+  if (document.visibilityState==='visible' && running) {
+    if (audioCtx && audioCtx.state==='suspended') {
+      audioCtx.resume().then(() => { beep(phase==='work'?'work':'rest'); vibrate(phase==='work'?'work':'rest'); });
     }
-    // Restart silent loop if it stopped somehow
     startSilentLoop();
     requestWakeLock();
     tick();
   }
 });
 
-// ── Init ──────────────────────────────────────────────────────────────────────
+// ── Init ───────────────────────────────────────────────────────────────────────
 loadSettings();
 updateDisplay();
 </script>

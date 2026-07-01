@@ -152,7 +152,7 @@
       <button class="btn btn-skip" id="skipBtn" onclick="skipPhase()" disabled>Skip</button>
       <button class="btn" onclick="resetTimer()">Reset</button>
     </div>
-    <div class="done-banner" id="doneBanner">🎉 Workout abgeschlossen!</div>
+    <div class="done-banner" id="doneBanner">Workout abgeschlossen!</div>
   </div>
 </div>
 <div class="wake-badge" id="wakeBadge"></div>
@@ -160,33 +160,103 @@
 <script>
 const CIRC = 2 * Math.PI * 88;
 
-// ── State ────────────────────────────────────────────────────────────────────
+// ── State ─────────────────────────────────────────────────────────────────────
 let workTime = 30, restTime = 10, maxRounds = 0;
 let phase = 'idle', running = false;
 let currentRound = 0;
-let phaseStartTime = null;   // Date.now() at start of current phase
-let phaseDuration = 0;       // seconds
-let sessionStart = null;     // Date.now() at session start
-let remainingAtPause = 0;    // seconds left when paused
+let phaseStartTime = null;
+let phaseDuration = 0;
+let sessionStart = null;
+let remainingAtPause = 0;
 let interval = null;
 let wakeLock = null;
+
+// ── Audio ─────────────────────────────────────────────────────────────────────
 let audioCtx = null;
+let silentNode = null;   // keeps iOS audio session alive while timer runs
 
-// ── Elements ─────────────────────────────────────────────────────────────────
-const ringFg     = document.getElementById('ringFg');
-const bigNum     = document.getElementById('bigNum');
-const phaseTag   = document.getElementById('phaseTag');
-const roundInfo  = document.getElementById('roundInfo');
-const mainBtn    = document.getElementById('mainBtn');
-const skipBtn    = document.getElementById('skipBtn');
-const statSets   = document.getElementById('statSets');
-const statTotal  = document.getElementById('statTotal');
-const statNext   = document.getElementById('statNext');
-const doneBanner = document.getElementById('doneBanner');
-const settings   = document.getElementById('settingsBlock');
-const wakeBadge  = document.getElementById('wakeBadge');
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
 
-// ── Settings persistence ──────────────────────────────────────────────────────
+// Play a 1-second silent buffer in a loop.
+// This is the only reliable way to keep iOS from suspending the AudioContext
+// when the app is backgrounded. Must be started on a user gesture.
+function startSilentLoop() {
+  if (!audioCtx) return;
+  if (silentNode) return; // already running
+  const buf = audioCtx.createBuffer(1, audioCtx.sampleRate, audioCtx.sampleRate);
+  // buffer is already zero (silence)
+  function scheduleNext() {
+    if (!running) { silentNode = null; return; }
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf;
+    src.connect(audioCtx.destination);
+    silentNode = src;
+    src.onended = scheduleNext;
+    src.start();
+  }
+  scheduleNext();
+}
+
+function stopSilentLoop() {
+  if (silentNode) {
+    try { silentNode.stop(); } catch(e) {}
+    silentNode = null;
+  }
+}
+
+function beep(type) {
+  if (!audioCtx) return;
+  // Ensure context is running (safety net)
+  const play = () => {
+    const plays = type === 'work' ? [[880,0],[880,.15]]
+                : type === 'rest' ? [[440,0]]
+                : [[660,0],[550,.2],[440,.4]];
+    plays.forEach(([freq, t]) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination);
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0.45, audioCtx.currentTime + t);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + t + .22);
+      o.start(audioCtx.currentTime + t);
+      o.stop(audioCtx.currentTime + t + .25);
+    });
+  };
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume().then(play).catch(() => {});
+  } else {
+    play();
+  }
+}
+
+function vibrate(type) {
+  if (!navigator.vibrate) return;
+  if (type === 'work') navigator.vibrate([80,60,80]);
+  else if (type === 'rest') navigator.vibrate([200]);
+  else navigator.vibrate([100,80,100,80,300]);
+}
+
+// ── Wake Lock ─────────────────────────────────────────────────────────────────
+async function requestWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try {
+    if (wakeLock) return;
+    wakeLock = await navigator.wakeLock.request('screen');
+    document.getElementById('wakeBadge').textContent = '⚡ Bildschirm aktiv';
+    wakeLock.addEventListener('release', () => {
+      wakeLock = null;
+      document.getElementById('wakeBadge').textContent = '';
+    });
+  } catch(e) {}
+}
+function releaseWakeLock() {
+  if (wakeLock) { wakeLock.release(); wakeLock = null; }
+  document.getElementById('wakeBadge').textContent = '';
+}
+
+// ── Settings ──────────────────────────────────────────────────────────────────
 function saveSettings() {
   localStorage.setItem('wt_w', workTime);
   localStorage.setItem('wt_r', restTime);
@@ -197,8 +267,8 @@ function loadSettings() {
   const r = +localStorage.getItem('wt_r') || 10;
   const n = +localStorage.getItem('wt_n') || 0;
   workTime = w; restTime = r; maxRounds = n;
-  document.getElementById('workSlider').value   = w;
-  document.getElementById('restSlider').value   = r;
+  document.getElementById('workSlider').value = w;
+  document.getElementById('restSlider').value = r;
   document.getElementById('roundsSlider').value = n;
   document.getElementById('workVal').textContent   = w + ' sek';
   document.getElementById('restVal').textContent   = r + ' sek';
@@ -207,7 +277,6 @@ function loadSettings() {
   updateFill(document.getElementById('restSlider'),   5,  60);
   updateFill(document.getElementById('roundsSlider'), 0,  20);
 }
-
 function updateFill(el, min, max) {
   el.style.setProperty('--pct', ((el.value - min) / (max - min) * 100).toFixed(1) + '%');
 }
@@ -228,110 +297,59 @@ document.getElementById('roundsSlider').addEventListener('input', function() {
   updateFill(this, 0, 20); saveSettings();
 });
 
-// ── Audio ─────────────────────────────────────────────────────────────────────
-function ensureAudio() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  // iOS suspends AudioContext in background — always resume
-  if (audioCtx.state === 'suspended') return audioCtx.resume();
-  return Promise.resolve();
-}
-
-function beep(type) {
-  ensureAudio().then(() => {
-    const plays = type === 'work' ? [[880,0],[880,.15]]
-                : type === 'rest' ? [[440,0]]
-                : [[660,0],[550,.2],[440,.4]]; // done
-    plays.forEach(([freq, t]) => {
-      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-      o.connect(g); g.connect(audioCtx.destination);
-      o.frequency.value = freq;
-      g.gain.setValueAtTime(0.45, audioCtx.currentTime + t);
-      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + t + .22);
-      o.start(audioCtx.currentTime + t);
-      o.stop(audioCtx.currentTime + t + .25);
-    });
-  }).catch(() => {});
-}
-
-function vibrate(type) {
-  if (!navigator.vibrate) return;
-  if (type === 'work') navigator.vibrate([80,60,80]);
-  else if (type === 'rest') navigator.vibrate([200]);
-  else navigator.vibrate([100,80,100,80,300]);
-}
-
-// ── Wake Lock ─────────────────────────────────────────────────────────────────
-async function requestWakeLock() {
-  if (!('wakeLock' in navigator)) return;
-  try {
-    if (wakeLock) return;
-    wakeLock = await navigator.wakeLock.request('screen');
-    wakeBadge.textContent = '⚡ Bildschirm aktiv';
-    wakeLock.addEventListener('release', () => {
-      wakeLock = null;
-      if (running) wakeBadge.textContent = '';
-    });
-  } catch(e) { wakeBadge.textContent = ''; }
-}
-function releaseWakeLock() {
-  if (wakeLock) { wakeLock.release(); wakeLock = null; }
-  wakeBadge.textContent = '';
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Timer core ────────────────────────────────────────────────────────────────
 function getRemaining() {
   if (!phaseStartTime) return 0;
   return Math.max(0, phaseDuration - Math.floor((Date.now() - phaseStartTime) / 1000));
 }
 function getTotalSec() {
-  if (!sessionStart) return 0;
-  return Math.floor((Date.now() - sessionStart) / 1000);
+  return sessionStart ? Math.floor((Date.now() - sessionStart) / 1000) : 0;
 }
 function fmt(s) { return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); }
 
 function setRing(val, max, color) {
   ringFg.style.strokeDasharray  = CIRC;
-  ringFg.style.strokeDashoffset = CIRC * (1 - Math.max(0,val) / max);
+  ringFg.style.strokeDashoffset = CIRC * (1 - Math.max(0, val) / max);
   ringFg.style.stroke = color;
 }
 
-// ── Display ───────────────────────────────────────────────────────────────────
 function updateDisplay() {
-  const rem = phase === 'idle' ? 0 : getRemaining();
-  bigNum.textContent    = phase === 'idle' ? '–' : rem;
-  statSets.textContent  = currentRound;
-  statTotal.textContent = fmt(phase === 'idle' ? 0 : getTotalSec());
+  const rem = (phase === 'idle') ? 0 : getRemaining();
+  document.getElementById('bigNum').textContent    = phase === 'idle' ? '–' : rem;
+  document.getElementById('statSets').textContent  = currentRound;
+  document.getElementById('statTotal').textContent = fmt(phase === 'idle' ? 0 : getTotalSec());
 
   if (phase === 'work') {
     phaseTag.textContent = 'Belastung'; phaseTag.className = 'phase-tag tag-work';
     setRing(rem, phaseDuration, '#FF4C1F');
-    statNext.textContent  = restTime + 's';
-    roundInfo.textContent = 'Runde ' + currentRound + (maxRounds > 0 ? ' / ' + maxRounds : '');
+    document.getElementById('statNext').textContent  = restTime + 's';
+    document.getElementById('roundInfo').textContent = 'Runde ' + currentRound + (maxRounds > 0 ? ' / ' + maxRounds : '');
   } else if (phase === 'rest') {
     phaseTag.textContent = 'Pause'; phaseTag.className = 'phase-tag tag-rest';
     setRing(rem, phaseDuration, '#00C27C');
-    statNext.textContent  = workTime + 's';
-    roundInfo.textContent = 'Runde ' + currentRound + (maxRounds > 0 ? ' / ' + maxRounds : '');
+    document.getElementById('statNext').textContent  = workTime + 's';
+    document.getElementById('roundInfo').textContent = 'Runde ' + currentRound + (maxRounds > 0 ? ' / ' + maxRounds : '');
   } else {
     phaseTag.textContent = 'Bereit'; phaseTag.className = 'phase-tag tag-ready';
     ringFg.style.strokeDasharray = CIRC; ringFg.style.strokeDashoffset = CIRC; ringFg.style.stroke = '#2A2A2A';
-    statNext.textContent = '–'; roundInfo.textContent = 'Runde –';
+    document.getElementById('statNext').textContent  = '–';
+    document.getElementById('roundInfo').textContent = 'Runde –';
   }
 }
 
-// ── Phase switch ──────────────────────────────────────────────────────────────
+const phaseTag = document.getElementById('phaseTag');
+const ringFg   = document.getElementById('ringFg');
+
 function startPhase(newPhase, round) {
-  phase         = newPhase;
-  currentRound  = round;
-  phaseDuration = newPhase === 'work' ? workTime : restTime;
-  phaseStartTime= Date.now();
+  phase          = newPhase;
+  currentRound   = round;
+  phaseDuration  = newPhase === 'work' ? workTime : restTime;
+  phaseStartTime = Date.now();
 }
 
-// ── Tick (every 200ms) ────────────────────────────────────────────────────────
 function tick() {
   if (!running || phase === 'idle') return;
-
-  // Handle any expired phases (catches up after background)
+  // Catch up: handle any phases that expired while backgrounded
   while (getRemaining() <= 0) {
     if (phase === 'work') {
       if (maxRounds > 0 && currentRound >= maxRounds) { finishWorkout(); return; }
@@ -348,48 +366,54 @@ function tick() {
 function finishWorkout() {
   clearInterval(interval); interval = null;
   running = false; phase = 'idle';
-  mainBtn.textContent = 'Start';
-  skipBtn.disabled = true;
-  doneBanner.style.display = 'block';
-  settings.classList.remove('dimmed');
+  stopSilentLoop();
   releaseWakeLock();
+  document.getElementById('mainBtn').textContent = 'Start';
+  document.getElementById('skipBtn').disabled = true;
+  document.getElementById('doneBanner').style.display = 'block';
+  document.getElementById('settingsBlock').classList.remove('dimmed');
   beep('done'); vibrate('done');
   updateDisplay();
 }
 
 // ── Controls ──────────────────────────────────────────────────────────────────
 function toggleTimer() {
-  ensureAudio(); // unlock AudioContext on first user gesture
+  // Always init & resume AudioContext on user gesture (iOS requirement)
+  initAudio();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
 
   if (phase === 'idle') {
     // Fresh start
-    doneBanner.style.display = 'none';
+    document.getElementById('doneBanner').style.display = 'none';
     sessionStart = Date.now();
     startPhase('work', 1);
     running = true;
+    startSilentLoop(); // keeps iOS audio session alive
     beep('work'); vibrate('work');
     interval = setInterval(tick, 200);
-    mainBtn.textContent = 'Pause';
-    skipBtn.disabled = false;
-    settings.classList.add('dimmed');
+    document.getElementById('mainBtn').textContent = 'Pause';
+    document.getElementById('skipBtn').disabled = false;
+    document.getElementById('settingsBlock').classList.add('dimmed');
     requestWakeLock();
 
   } else if (running) {
-    // Pause — save remaining so resume is exact
+    // Pause
     remainingAtPause = getRemaining();
     clearInterval(interval); interval = null;
     running = false;
-    mainBtn.textContent = 'Weiter';
-    skipBtn.disabled = true;
+    stopSilentLoop();
     releaseWakeLock();
+    document.getElementById('mainBtn').textContent = 'Weiter';
+    document.getElementById('skipBtn').disabled = true;
 
   } else {
-    // Resume — reconstruct phaseStartTime from saved remaining
+    // Resume
     phaseStartTime = Date.now() - (phaseDuration - remainingAtPause) * 1000;
     running = true;
+    startSilentLoop();
     interval = setInterval(tick, 200);
-    mainBtn.textContent = 'Pause';
-    skipBtn.disabled = false;
+    document.getElementById('mainBtn').textContent = 'Pause';
+    document.getElementById('skipBtn').disabled = false;
     requestWakeLock();
   }
   updateDisplay();
@@ -410,30 +434,32 @@ function skipPhase() {
 
 function resetTimer() {
   clearInterval(interval); interval = null;
+  stopSilentLoop();
   releaseWakeLock();
   running = false; phase = 'idle';
   currentRound = 0; sessionStart = null; phaseStartTime = null;
-  mainBtn.textContent = 'Start';
-  skipBtn.disabled = true;
-  doneBanner.style.display = 'none';
-  settings.classList.remove('dimmed');
+  document.getElementById('mainBtn').textContent = 'Start';
+  document.getElementById('skipBtn').disabled = true;
+  document.getElementById('doneBanner').style.display = 'none';
+  document.getElementById('settingsBlock').classList.remove('dimmed');
   updateDisplay();
 }
 
-// ── Background / Foreground ───────────────────────────────────────────────────
-// When returning from background:
-// 1. AudioContext may be suspended → resume it, then beep current phase
-// 2. Wake lock may have been released → re-request
-// 3. tick() will naturally catch up via Date.now() timing
+// ── Visibility change ─────────────────────────────────────────────────────────
+// The silent loop should prevent iOS from ever suspending the AudioContext.
+// This handler is a fallback for edge cases (e.g. very long background time).
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && running) {
-    ensureAudio().then(() => {
-      // Beep current phase so user knows where they are
-      beep(phase === 'work' ? 'work' : 'rest');
-      vibrate(phase === 'work' ? 'work' : 'rest');
-    });
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume().then(() => {
+        beep(phase === 'work' ? 'work' : 'rest');
+        vibrate(phase === 'work' ? 'work' : 'rest');
+      }).catch(() => {});
+    }
+    // Restart silent loop if it stopped somehow
+    startSilentLoop();
     requestWakeLock();
-    tick(); // immediate catch-up
+    tick();
   }
 });
 

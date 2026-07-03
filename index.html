@@ -132,34 +132,21 @@ let phase = 'idle', running = false;
 let currentRound = 0;
 let phaseStartTime = null, phaseDuration = 0, sessionStart = null, remainingAtPause = 0;
 let interval = null, wakeLock = null;
-let audioCtx = null, silentSource = null;
+let audioCtx = null;
 
 // ── Audio ─────────────────────────────────────────────────────────────────────
+// No silent loop — it would interrupt background music on iOS.
+// Vibration is the reliable signal in background; beep only when app is visible.
+
 function initAudio() {
   if (audioCtx) return;
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 }
 
-// Looping silent buffer — runs entirely in the Web Audio scheduler (no JS needed).
-// This keeps the iOS audio session alive even when JS is frozen in background.
-function startSilentLoop() {
-  if (!audioCtx || silentSource) return;
-  // 2 seconds of silence; looped = infinite, no JS reschedule needed
-  const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 2, audioCtx.sampleRate);
-  const src = audioCtx.createBufferSource();
-  src.buffer = buf;
-  src.loop = true; // Web Audio engine loops this, not JS
-  src.connect(audioCtx.destination);
-  src.start(0);
-  silentSource = src;
-}
-
-function stopSilentLoop() {
-  if (silentSource) { try { silentSource.stop(); } catch(e) {} silentSource = null; }
-}
-
 function beep(type) {
   if (!audioCtx) return;
+  // Only play audio when app is visible — avoids interrupting background music
+  if (document.visibilityState !== 'visible') return;
   const doBeep = () => {
     const plays = type === 'work' ? [[880,0],[880,.15]]
                 : type === 'rest' ? [[440,0]]
@@ -178,6 +165,7 @@ function beep(type) {
 }
 
 function vibrate(type) {
+  // Vibration works reliably in background — primary signal when backgrounded
   if (!navigator.vibrate) return;
   if (type === 'work') navigator.vibrate([80,60,80]);
   else if (type === 'rest') navigator.vibrate([200]);
@@ -190,7 +178,10 @@ async function requestWakeLock() {
   try {
     wakeLock = await navigator.wakeLock.request('screen');
     document.getElementById('wakeBadge').textContent = '⚡ Bildschirm aktiv';
-    wakeLock.addEventListener('release', () => { wakeLock = null; document.getElementById('wakeBadge').textContent = ''; });
+    wakeLock.addEventListener('release', () => {
+      wakeLock = null;
+      document.getElementById('wakeBadge').textContent = '';
+    });
   } catch(e) {}
 }
 function releaseWakeLock() {
@@ -199,7 +190,11 @@ function releaseWakeLock() {
 }
 
 // ── Settings ───────────────────────────────────────────────────────────────────
-function saveSettings() { localStorage.setItem('wt_w',workTime); localStorage.setItem('wt_r',restTime); localStorage.setItem('wt_n',maxRounds); }
+function saveSettings() {
+  localStorage.setItem('wt_w', workTime);
+  localStorage.setItem('wt_r', restTime);
+  localStorage.setItem('wt_n', maxRounds);
+}
 function loadSettings() {
   workTime  = +localStorage.getItem('wt_w') || 30;
   restTime  = +localStorage.getItem('wt_r') || 10;
@@ -214,76 +209,87 @@ function loadSettings() {
   updateFill(document.getElementById('restSlider'),   5,  60);
   updateFill(document.getElementById('roundsSlider'), 0,  20);
 }
-function updateFill(el, min, max) { el.style.setProperty('--pct', ((el.value-min)/(max-min)*100).toFixed(1)+'%'); }
-
+function updateFill(el, min, max) {
+  el.style.setProperty('--pct', ((el.value - min) / (max - min) * 100).toFixed(1) + '%');
+}
 document.getElementById('workSlider').addEventListener('input', function() {
-  workTime = +this.value; document.getElementById('workVal').textContent = workTime+' sek'; updateFill(this,5,120); saveSettings(); });
+  workTime = +this.value; document.getElementById('workVal').textContent = workTime + ' sek';
+  updateFill(this, 5, 120); saveSettings();
+});
 document.getElementById('restSlider').addEventListener('input', function() {
-  restTime = +this.value; document.getElementById('restVal').textContent = restTime+' sek'; updateFill(this,5,60); saveSettings(); });
+  restTime = +this.value; document.getElementById('restVal').textContent = restTime + ' sek';
+  updateFill(this, 5, 60); saveSettings();
+});
 document.getElementById('roundsSlider').addEventListener('input', function() {
-  maxRounds = +this.value; document.getElementById('roundsVal').textContent = maxRounds===0?'∞':maxRounds; updateFill(this,0,20); saveSettings(); });
+  maxRounds = +this.value;
+  document.getElementById('roundsVal').textContent = maxRounds === 0 ? '∞' : maxRounds;
+  updateFill(this, 0, 20); saveSettings();
+});
 
 // ── Timer core ─────────────────────────────────────────────────────────────────
-function getRemaining() { return !phaseStartTime ? 0 : Math.max(0, phaseDuration - Math.floor((Date.now()-phaseStartTime)/1000)); }
-function getTotalSec()  { return sessionStart ? Math.floor((Date.now()-sessionStart)/1000) : 0; }
-function fmt(s)         { return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+function getRemaining() {
+  return !phaseStartTime ? 0 : Math.max(0, phaseDuration - Math.floor((Date.now() - phaseStartTime) / 1000));
+}
+function getTotalSec() { return sessionStart ? Math.floor((Date.now() - sessionStart) / 1000) : 0; }
+function fmt(s) { return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); }
 
 const ringFg   = document.getElementById('ringFg');
 const phaseTag = document.getElementById('phaseTag');
 
 function setRing(val, max, color) {
   ringFg.style.strokeDasharray  = CIRC;
-  ringFg.style.strokeDashoffset = CIRC * (1 - Math.max(0,val)/max);
+  ringFg.style.strokeDashoffset = CIRC * (1 - Math.max(0, val) / max);
   ringFg.style.stroke = color;
 }
 
 function updateDisplay() {
-  const rem = phase==='idle' ? 0 : getRemaining();
-  document.getElementById('bigNum').textContent    = phase==='idle' ? '–' : rem;
+  const rem = phase === 'idle' ? 0 : getRemaining();
+  document.getElementById('bigNum').textContent    = phase === 'idle' ? '–' : rem;
   document.getElementById('statSets').textContent  = currentRound;
-  document.getElementById('statTotal').textContent = fmt(phase==='idle'?0:getTotalSec());
-  if (phase==='work') {
-    phaseTag.textContent='Belastung'; phaseTag.className='phase-tag tag-work';
+  document.getElementById('statTotal').textContent = fmt(phase === 'idle' ? 0 : getTotalSec());
+  if (phase === 'work') {
+    phaseTag.textContent = 'Belastung'; phaseTag.className = 'phase-tag tag-work';
     setRing(rem, phaseDuration, '#FF4C1F');
-    document.getElementById('statNext').textContent  = restTime+'s';
-    document.getElementById('roundInfo').textContent = 'Runde '+currentRound+(maxRounds>0?' / '+maxRounds:'');
-  } else if (phase==='rest') {
-    phaseTag.textContent='Pause'; phaseTag.className='phase-tag tag-rest';
+    document.getElementById('statNext').textContent  = restTime + 's';
+    document.getElementById('roundInfo').textContent = 'Runde ' + currentRound + (maxRounds > 0 ? ' / ' + maxRounds : '');
+  } else if (phase === 'rest') {
+    phaseTag.textContent = 'Pause'; phaseTag.className = 'phase-tag tag-rest';
     setRing(rem, phaseDuration, '#00C27C');
-    document.getElementById('statNext').textContent  = workTime+'s';
-    document.getElementById('roundInfo').textContent = 'Runde '+currentRound+(maxRounds>0?' / '+maxRounds:'');
+    document.getElementById('statNext').textContent  = workTime + 's';
+    document.getElementById('roundInfo').textContent = 'Runde ' + currentRound + (maxRounds > 0 ? ' / ' + maxRounds : '');
   } else {
-    phaseTag.textContent='Bereit'; phaseTag.className='phase-tag tag-ready';
-    ringFg.style.strokeDasharray=CIRC; ringFg.style.strokeDashoffset=CIRC; ringFg.style.stroke='#2A2A2A';
-    document.getElementById('statNext').textContent='–'; document.getElementById('roundInfo').textContent='Runde –';
+    phaseTag.textContent = 'Bereit'; phaseTag.className = 'phase-tag tag-ready';
+    ringFg.style.strokeDasharray = CIRC; ringFg.style.strokeDashoffset = CIRC; ringFg.style.stroke = '#2A2A2A';
+    document.getElementById('statNext').textContent  = '–';
+    document.getElementById('roundInfo').textContent = 'Runde –';
   }
 }
 
 function startPhase(newPhase, round) {
-  phase=newPhase; currentRound=round;
-  phaseDuration = newPhase==='work' ? workTime : restTime;
+  phase = newPhase; currentRound = round;
+  phaseDuration  = newPhase === 'work' ? workTime : restTime;
   phaseStartTime = Date.now();
 }
 
 function tick() {
-  if (!running || phase==='idle') return;
+  if (!running || phase === 'idle') return;
   while (getRemaining() <= 0) {
-    if (phase==='work') {
-      if (maxRounds>0 && currentRound>=maxRounds) { finishWorkout(); return; }
+    if (phase === 'work') {
+      if (maxRounds > 0 && currentRound >= maxRounds) { finishWorkout(); return; }
       beep('rest'); vibrate('rest'); startPhase('rest', currentRound);
     } else {
-      beep('work'); vibrate('work'); startPhase('work', currentRound+1);
+      beep('work'); vibrate('work'); startPhase('work', currentRound + 1);
     }
   }
   updateDisplay();
 }
 
 function finishWorkout() {
-  clearInterval(interval); interval=null; running=false; phase='idle';
-  stopSilentLoop(); releaseWakeLock();
-  document.getElementById('mainBtn').textContent='Start';
-  document.getElementById('skipBtn').disabled=true;
-  document.getElementById('doneBanner').style.display='block';
+  clearInterval(interval); interval = null; running = false; phase = 'idle';
+  releaseWakeLock();
+  document.getElementById('mainBtn').textContent = 'Start';
+  document.getElementById('skipBtn').disabled = true;
+  document.getElementById('doneBanner').style.display = 'block';
   document.getElementById('settingsBlock').classList.remove('dimmed');
   beep('done'); vibrate('done'); updateDisplay();
 }
@@ -291,64 +297,66 @@ function finishWorkout() {
 // ── Controls ───────────────────────────────────────────────────────────────────
 function toggleTimer() {
   initAudio();
-  if (audioCtx.state==='suspended') audioCtx.resume();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
 
-  if (phase==='idle') {
-    document.getElementById('doneBanner').style.display='none';
-    sessionStart=Date.now(); startPhase('work',1); running=true;
-    startSilentLoop();
+  if (phase === 'idle') {
+    document.getElementById('doneBanner').style.display = 'none';
+    sessionStart = Date.now(); startPhase('work', 1); running = true;
     beep('work'); vibrate('work');
-    interval=setInterval(tick,200);
-    document.getElementById('mainBtn').textContent='Pause';
-    document.getElementById('skipBtn').disabled=false;
+    interval = setInterval(tick, 200);
+    document.getElementById('mainBtn').textContent = 'Pause';
+    document.getElementById('skipBtn').disabled = false;
     document.getElementById('settingsBlock').classList.add('dimmed');
     requestWakeLock();
   } else if (running) {
-    remainingAtPause=getRemaining();
-    clearInterval(interval); interval=null; running=false;
-    stopSilentLoop(); releaseWakeLock();
-    document.getElementById('mainBtn').textContent='Weiter';
-    document.getElementById('skipBtn').disabled=true;
+    remainingAtPause = getRemaining();
+    clearInterval(interval); interval = null; running = false;
+    releaseWakeLock();
+    document.getElementById('mainBtn').textContent = 'Weiter';
+    document.getElementById('skipBtn').disabled = true;
   } else {
-    phaseStartTime=Date.now()-(phaseDuration-remainingAtPause)*1000;
-    running=true;
-    startSilentLoop();
-    interval=setInterval(tick,200);
-    document.getElementById('mainBtn').textContent='Pause';
-    document.getElementById('skipBtn').disabled=false;
+    phaseStartTime = Date.now() - (phaseDuration - remainingAtPause) * 1000;
+    running = true;
+    interval = setInterval(tick, 200);
+    document.getElementById('mainBtn').textContent = 'Pause';
+    document.getElementById('skipBtn').disabled = false;
     requestWakeLock();
   }
   updateDisplay();
 }
 
 function skipPhase() {
-  if (!running || phase==='idle') return;
-  if (phase==='work') {
-    if (maxRounds>0 && currentRound>=maxRounds) { finishWorkout(); return; }
-    beep('rest'); vibrate('rest'); startPhase('rest',currentRound);
-  } else { beep('work'); vibrate('work'); startPhase('work',currentRound+1); }
+  if (!running || phase === 'idle') return;
+  if (phase === 'work') {
+    if (maxRounds > 0 && currentRound >= maxRounds) { finishWorkout(); return; }
+    beep('rest'); vibrate('rest'); startPhase('rest', currentRound);
+  } else {
+    beep('work'); vibrate('work'); startPhase('work', currentRound + 1);
+  }
   updateDisplay();
 }
 
 function resetTimer() {
-  clearInterval(interval); interval=null;
-  stopSilentLoop(); releaseWakeLock();
-  running=false; phase='idle'; currentRound=0; sessionStart=null; phaseStartTime=null;
-  document.getElementById('mainBtn').textContent='Start';
-  document.getElementById('skipBtn').disabled=true;
-  document.getElementById('doneBanner').style.display='none';
+  clearInterval(interval); interval = null;
+  releaseWakeLock();
+  running = false; phase = 'idle'; currentRound = 0; sessionStart = null; phaseStartTime = null;
+  document.getElementById('mainBtn').textContent = 'Start';
+  document.getElementById('skipBtn').disabled = true;
+  document.getElementById('doneBanner').style.display = 'none';
   document.getElementById('settingsBlock').classList.remove('dimmed');
   updateDisplay();
 }
 
-// ── Visibility change (Fallback) ───────────────────────────────────────────────
-// Silent loop keeps AudioContext alive, but this is a safety net.
+// ── Visibility change ──────────────────────────────────────────────────────────
+// When returning to the app: resume AudioContext (was suspended), play beep for current phase.
+// Timer is already at correct position thanks to Date.now() timing.
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState==='visible' && running) {
-    if (audioCtx && audioCtx.state==='suspended') {
-      audioCtx.resume().then(() => { beep(phase==='work'?'work':'rest'); vibrate(phase==='work'?'work':'rest'); });
+  if (document.visibilityState === 'visible' && running) {
+    if (audioCtx) {
+      audioCtx.resume().then(() => {
+        beep(phase === 'work' ? 'work' : 'rest');
+      }).catch(() => {});
     }
-    startSilentLoop();
     requestWakeLock();
     tick();
   }
